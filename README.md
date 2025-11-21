@@ -63,7 +63,6 @@ EXPOSE 1200
 
 Common suggestions :
 
-
 - Use `COPY package*.json ./` then `RUN npm install` followed by `COPY . .` to optimize Docker layer caching (faster rebuilds when only app code changes).
 - Consider pinning a Node.js version instead of `latest` (e.g., `node:20-alpine`) for reproducible builds.
 
@@ -80,6 +79,12 @@ Docker builds images as a series of filesystem layers, one per Dockerfile instru
   - Each instruction (for example `FROM`, `COPY`, `RUN`) creates a new layer. Docker computes a cache key for each instruction based on the instruction itself and the state of the files used by that instruction.
   - If Docker finds an existing image layer with the same cache key, it reuses the cached layer and skips re-running that instruction.
   - When a layer is reused / a new layer is created, all following layers are also reused — until Docker encounters an instruction whose inputs changed.
+
+- `package.json` and lockfiles (why they matter):
+  - Copying `package.json` (and the lockfile: `package-lock.json`,`package.json`) separately before running dependency installation keeps the install step cached until your dependencies change.
+  - Always place the static files first like package.* and source code at the end so the npm i only revokes when static files changes not when source code changes each time which is more frequent.
+  - Example: `COPY package*.json ./`  then `RUN npm ci` (or `RUN npm install`) — when only application source files change, Docker will reuse the cached dependency-install layer.
+  - Any change to `package.json` or the lockfile will invalidate the cached install layer and force dependency installation again.
 **Verifying the container**
 
 1. Build the image (recommended form):
