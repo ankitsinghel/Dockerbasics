@@ -14,6 +14,7 @@ Run these commands to build and run the image exactly as requested:
 
 ```powershell
 docker build -t ankitsinghel/dockerbasics (username/image) it makes the image unique
+docker push nkitsinghel/dockerbasics (to push the image to docker hub)
 docker run -it -p 1200:1200 ankitsinghel/dockerbasics
 ```
 
@@ -38,6 +39,7 @@ This maps port `1200` on your host to port `1200` in the container and starts an
 The `dockerfile` in this repo has the following contents:
 
 ```dockerfile
+# each line is called layer
 FROM node:latest
 
 COPY . /home/app
@@ -49,6 +51,7 @@ RUN npm install
 CMD [ "node" , "index" ]
 
 EXPOSE 1200
+
 ```
 
 - `FROM node:latest` : Uses the official Node.js image (latest tag) as the base image. It includes Node.js and npm preinstalled.
@@ -69,6 +72,14 @@ Common suggestions :
 - `index.js` (in this repo): The Node.js entrypoint. Typically this will start an HTTP server that listens on port `1200`. If you open that file you will find the exact behavior (server, CLI, or script).
 - `package.json`: Lists application metadata and dependencies. `npm install` in the Dockerfile installs the packages listed here.
 
+## Docker image layers and caching
+
+Docker builds images as a series of filesystem layers, one per Dockerfile instruction (for most instructions). Understanding layers and Docker's layer cache helps you build images faster and keep image sizes small.
+
+- How caching works:
+  - Each instruction (for example `FROM`, `COPY`, `RUN`) creates a new layer. Docker computes a cache key for each instruction based on the instruction itself and the state of the files used by that instruction.
+  - If Docker finds an existing image layer with the same cache key, it reuses the cached layer and skips re-running that instruction.
+  - When a layer is reused / a new layer is created, all following layers are also reused — until Docker encounters an instruction whose inputs changed.
 **Verifying the container**
 
 1. Build the image (recommended form):
